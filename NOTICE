@@ -1,0 +1,29 @@
+WorkBuddy2API Stack
+===================
+
+本仓库包含基于下列开源项目二次开发的代码：
+
+  workbuddy2api
+  https://github.com/Sliverkiss/workbuddy2api
+  MIT License, Copyright (c) 2026 Sliverkiss
+
+本仓库版权
+----------
+
+  Copyright (c) 2026 luo（本衍生版本的修改部分）
+  上游原始代码版权归 Sliverkiss 所有，见 gateway/LICENSE 与 gui/LICENSE。
+
+本仓库对上游代码的修改
+----------------------
+
+1. 将网关（gateway/）、管理面板（gui/）与部署脚本（deploy/）整合为单一仓库，采用多目录布局。
+2. 网关侧调整了 WAF 判定口径：由"同一时间窗内不同 UID 数"改为"不同客户端请求数"，
+   并在调用链上引入请求级 key（reqKey），错误码由 waf_ip_blocked 调整为 waf_request_blocked。
+3. 移除了上游仓库的 AI 治理 Action、issue 模板与内部开发报告等与衍生版无关的内容。
+4. 重写了部署与验证脚本，去掉原作者的本地绝对路径、内网域名等环境相关信息，改为可配置参数。
+5. 管理面板的 compose 默认挂载路径由固定绝对路径改为仓库内相对路径。
+
+上游的 MIT 许可与版权声明保留在 gateway/LICENSE 与 gui/LICENSE 中，其条款完整适用于对应目录下的代码。
+
+上游 README 中的免责声明同样适用：本项目仅用于个人学习与研究，
+请仅使用本人持有且已获授权的账号，并自行遵守上游平台的服务条款。

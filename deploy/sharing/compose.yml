@@ -1,0 +1,53 @@
+name: workbuddy-sharing
+# 受限 API 外分享：nginx 反代（端点白名单 + 独立 sk-share key + 限流）+ Tailscale Funnel。
+# 使用前先运行 Configure-Sharing.ps1 生成 private/nginx.conf 与 private/share-key.json。
+services:
+  proxy:
+    image: nginx:alpine
+    container_name: workbuddy-share-proxy
+    restart: unless-stopped
+    user: "101:101"
+    entrypoint: ["nginx"]
+    command: ["-g", "daemon off;"]
+    ports:
+      # 只发布到回环地址：绝不要把 17864 / 网关 7863 / 面板 8787 直接暴露到公网
+      - "127.0.0.1:17864:8080"
+    volumes:
+      - ./private/nginx.conf:/etc/nginx/nginx.conf:ro
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 128m
+    logging:
+      options:
+        max-size: "2m"
+        max-file: "2"
+  tunnel:
+    image: workbuddy-tailscale:1.102.4
+    build:
+      context: .
+      dockerfile: Tailscale.Dockerfile
+    container_name: workbuddy-share-tunnel
+    restart: unless-stopped
+    network_mode: service:proxy
+    depends_on: [proxy]
+    environment:
+      # 若宿主机 / 出口需要经本地 HTTP 代理上网，改成实际地址；不需要则删掉这三项
+      HTTP_PROXY: http://host.docker.internal:7897
+      HTTPS_PROXY: http://host.docker.internal:7897
+      NO_PROXY: localhost,127.0.0.1,host.docker.internal
+      TS_FORCE_NOISE_443: "true"
+    volumes:
+      - ./tailscale:/var/lib/tailscale
+    read_only: true
+    tmpfs:
+      - /tmp:size=32m,mode=1777
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 256m
+    logging:
+      options:
+        max-size: "2m"
+        max-file: "2"

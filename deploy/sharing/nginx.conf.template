@@ -1,0 +1,60 @@
+worker_processes auto;
+pid /tmp/nginx.pid;
+error_log /dev/stderr warn;
+events { worker_connections 256; }
+http {
+    map_hash_bucket_size 128;
+    access_log off;
+    server_tokens off;
+    client_body_temp_path /tmp/client_body;
+    proxy_temp_path /tmp/proxy;
+    fastcgi_temp_path /tmp/fastcgi;
+    uwsgi_temp_path /tmp/uwsgi;
+    scgi_temp_path /tmp/scgi;
+    map "$request_method:$request_uri" $allowed_api {
+        default 0;
+        "GET:/v1/models" 1;
+        "POST:/v1/chat/completions" 1;
+        "POST:/v1/responses" 1;
+    }
+    map $http_authorization $share_authorized {
+        default 0;
+        "Bearer __SHARE_KEY__" 1;
+    }
+    limit_req_zone $server_name zone=shared_rate:1m rate=30r/m;
+    limit_conn_zone $server_name zone=shared_connections:1m;
+    server {
+        listen 8080;
+        server_name api-sharing;
+        default_type application/json;
+        client_max_body_size 32m;
+        client_body_timeout 30s;
+        client_header_timeout 15s;
+        keepalive_timeout 30s;
+        send_timeout 60s;
+        if ($allowed_api = 0) { return 404 '{"error":{"message":"Endpoint not shared","type":"invalid_request_error"}}'; }
+        if ($share_authorized = 0) { return 401 '{"error":{"message":"Invalid sharing key","type":"authentication_error"}}'; }
+        limit_req zone=shared_rate burst=10 nodelay;
+        limit_req_status 429;
+        limit_conn shared_connections 4;
+        limit_conn_status 429;
+        location / {
+            proxy_pass http://host.docker.internal:7863;
+            proxy_http_version 1.1;
+            proxy_set_header Host localhost:7863;
+            proxy_set_header Authorization "Bearer __GATEWAY_KEY__";
+            proxy_set_header Connection "";
+            proxy_set_header Cookie "";
+            proxy_set_header X-Api-Key "";
+            proxy_set_header X-Forwarded-For "";
+            proxy_set_header X-Forwarded-Host "";
+            proxy_set_header X-Forwarded-Proto "";
+            proxy_buffering off;
+            proxy_cache off;
+            proxy_redirect off;
+            proxy_connect_timeout 10s;
+            proxy_read_timeout 300s;
+            proxy_send_timeout 60s;
+        }
+    }
+}

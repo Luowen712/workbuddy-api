@@ -1,0 +1,21 @@
+# deploy/ 只保留可公开的脚本与文档；生成的配置、密钥与设备状态一律不入库。
+*
+!.gitignore
+!README.md
+!Test-Access.ps1
+!Test-Api.ps1
+!Test-Harness.mjs
+!sharing/
+sharing/*
+!sharing/compose.yml
+!sharing/Configure-Sharing.ps1
+!sharing/nginx.conf.template
+!sharing/README.md
+!sharing/Tailscale.Dockerfile
+!sharing/Test-Sharing.mjs
+
+# 运行期目录：共享 key、渲染后的 nginx.conf、Tailscale 设备状态
+private/
+sharing/private/
+sharing/tailscale/
+sharing/tailscale_*/

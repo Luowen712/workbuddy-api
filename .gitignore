@@ -1,0 +1,25 @@
+# 系统 / 编辑器
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/
+*.swp
+*.tmp
+
+# 运行期数据（网关与面板的配置、账号凭证、日志）
+gateway/config.json
+gateway/auths/
+gateway/data/
+gateway/state.json
+gui/config.json
+gui/data/
+**/node_modules/
+# 前端构建产物：保留 gui/internal/webui/dist 的占位页（go:embed 需要），只忽略真正的产物
+gui/web/dist/
+gui/internal/webui/dist/assets/
+
+# 本地覆盖
+*.local
+.env
+.env.*
